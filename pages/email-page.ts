@@ -6,7 +6,7 @@ export class EmailPage {
   readonly consentButton: Locator;
   readonly emailReceivedMessage: Locator;
   readonly confirmationEmailHeading: Locator;
-  readonly temporaryPasswordLocator: Locator;
+  readonly emailBody: Locator;
   readonly confirmationEmailButton: Locator;
 
   constructor(private readonly page: Page) {
@@ -21,9 +21,9 @@ export class EmailPage {
     this.confirmationEmailHeading = page
       .frameLocator('iframe[name="ifmail"]')
       .getByRole('heading', { name: 'Confirm your event registration' });
-    this.temporaryPasswordLocator = page
+    this.emailBody = page
       .frameLocator('iframe[name="ifmail"]')
-      .getByText('Temporary password:', { exact: true });
+      .locator('body');
     this.confirmationEmailButton = page
       .frameLocator('iframe[name="ifmail"]')
       .getByRole('link', { name: 'Confirm email and register' });
@@ -46,19 +46,13 @@ export class EmailPage {
   }
 
   async openEmail(): Promise<void> {
-    await this.emailReceivedMessage.click();
+    await this.emailReceivedMessage.first().click();
     await expect(this.confirmationEmailHeading).toBeVisible();
   }
 
-  async getTemporaryPassword(): Promise<string> {
-    const password = await this.temporaryPasswordLocator.evaluate((label) => {
-      const value = label.nextSibling?.textContent?.trim();
-      return value?.split(/\s+/)[0] ?? '';
-    });
-    if (!password) {
-      throw new Error('Temporary password was not found in the confirmation email');
-    }
-    return password;
+  async getTemporaryPassword(): Promise<string | null> {
+    const emailText = await this.emailBody.innerText();
+    return emailText.match(/Temporary password:\s*(\S+)/i)?.[1] ?? null;
   }
 
   async pressConfirmationEmailButton(): Promise<Page> {

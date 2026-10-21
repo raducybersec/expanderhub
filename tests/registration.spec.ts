@@ -4,10 +4,10 @@ import { EmailPage } from '../pages/email-page';
 
 
 const firstName = 'Razvan';
-const lastName = 'Ionescu';
+const lastName = 'Matei';
 const email = `${firstName}${lastName}@yopmail.com`.toLowerCase();
 
-test('E2E test', async ({ page }) => {
+test('E2E test', async ({ page }, testInfo) => {
   await test.step('Fill out registration form and submit', async () => {
     const registrationPage = new RegistrationPage(page);
 
@@ -34,7 +34,15 @@ test('E2E test', async ({ page }) => {
     await emailPage.pressSubmitButton();
     await emailPage.openEmail();
     const temporaryPassword = await emailPage.getTemporaryPassword();
-    console.log('Temporary password:', temporaryPassword);
+    if (temporaryPassword) {
+      console.log('Temporary password:', temporaryPassword);
+      await testInfo.attach('temporary-password.txt', {
+        body: temporaryPassword,
+        contentType: 'text/plain',
+      });
+    } else {
+      console.log('No temporary password was sent; this email belongs to an existing account.');
+    }
     const confirmationPage = await emailPage.pressConfirmationEmailButton();
     await expect(confirmationPage.locator('h1.ok')).toBeVisible();
   })
